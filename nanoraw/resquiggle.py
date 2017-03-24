@@ -16,7 +16,7 @@ from collections import defaultdict, namedtuple
 
 # import nanoraw functions
 import option_parsers
-import nanoraw_helper as nh
+import nanoraw.nanoraw_helper as nh
 
 NANORAW_VERSION = '0.4.1'
 VERBOSE = False
@@ -759,15 +759,15 @@ def fix_stay_states(
             abs_event_start)
 
 def get_read_data(fast5_fn, basecall_group, basecall_subgroup):
+
     try:
         fast5_data = h5py.File(fast5_fn, 'r')
     except IOError:
         raise IOError, 'Error opening file. Likely a corrupted file.'
 
     try:
-        called_dat = fast5_data[
-            '/Analyses/' + basecall_group + '/' + basecall_subgroup +
-            '/Events']
+        path = '/Analyses/' + basecall_group + '/' + basecall_subgroup + '/Events'
+        called_dat = fast5_data[path]       
         called_attrs = dict(called_dat.attrs.items())
         called_dat = called_dat.value
     except:
@@ -785,11 +785,10 @@ def get_read_data(fast5_fn, basecall_group, basecall_subgroup):
     channel_info = nh.get_channel_info(fast5_data)
 
     read_id = raw_attrs['read_id']
-
-    abs_event_start = int(called_attrs['start_time'] *
-                          channel_info.sampling_rate)
-    read_start_rel_to_raw = int(
-        abs_event_start - raw_attrs['start_time'])
+    start_time = raw_attrs["start_time"]
+        
+    abs_event_start = int(start_time * channel_info.sampling_rate)
+    read_start_rel_to_raw = int(abs_event_start - start_time)
 
     last_event = called_dat[-1]
     starts_rel_to_read = np.append(
